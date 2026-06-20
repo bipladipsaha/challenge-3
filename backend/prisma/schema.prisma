@@ -1,0 +1,247 @@
+// ========================================
+// CarbonIQ AI — Prisma Schema
+// ========================================
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum EmissionCategory {
+  TRAVEL
+  ELECTRICITY
+  FOOD
+  SHOPPING
+  WATER
+  WASTE
+  OTHER
+}
+
+enum GoalStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum ChallengeDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+// -----------------------------------------------------------------------------
+// MODELS
+// -----------------------------------------------------------------------------
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  avatarUrl       String?
+  role            Role     @default(USER)
+  isEmailVerified Boolean  @default(false)
+  refreshToken    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relationships
+  carbonEntries   CarbonEntry[]
+  goals           Goal[]
+  achievements    Achievement[]
+  recommendations Recommendation[]
+  communityPosts  CommunityPost[]
+  comments        Comment[]
+  likes           Like[]
+  aiInsights      AiInsight[]
+  auditLogs       AuditLog[]
+  sessions        Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("sessions")
+}
+
+model CarbonEntry {
+  id          String           @id @default(uuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    EmissionCategory
+  amount      Float            // amount of CO2 in kg
+  description String?
+  date        DateTime         @default(now())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@map("carbon_entries")
+}
+
+model Recommendation {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  impact      Float    // Estimated CO2 reduction in kg
+  isApplied   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@map("recommendations")
+}
+
+model Challenge {
+  id          String              @id @default(uuid())
+  title       String
+  description String
+  difficulty  ChallengeDifficulty
+  points      Int
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime            @default(now())
+
+  // Relationships
+  participants ChallengeParticipant[]
+
+  @@map("challenges")
+}
+
+model ChallengeParticipant {
+  id          String    @id @default(uuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  userId      String
+  status      GoalStatus @default(IN_PROGRESS)
+  joinedAt    DateTime   @default(now())
+  completedAt DateTime?
+
+  @@unique([challengeId, userId])
+  @@map("challenge_participants")
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String
+  iconUrl     String
+  createdAt   DateTime @default(now())
+
+  // Relationships
+  achievements Achievement[]
+
+  @@map("badges")
+}
+
+model Achievement {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  earnedAt  DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@map("achievements")
+}
+
+model Goal {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  targetAmount Float     // Target reduction in kg
+  currentAmount Float    @default(0)
+  deadline    DateTime
+  status      GoalStatus @default(IN_PROGRESS)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("goals")
+}
+
+model CommunityPost {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  comments  Comment[]
+  likes     Like[]
+
+  @@map("community_posts")
+}
+
+model Comment {
+  id        String        @id @default(uuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime      @default(now())
+
+  @@map("comments")
+}
+
+model Like {
+  id        String        @id @default(uuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@unique([postId, userId])
+  @@map("likes")
+}
+
+model AiInsight {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // e.g., 'HabitAnalysis', 'PredictiveAlert'
+  content   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("ai_insights")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}

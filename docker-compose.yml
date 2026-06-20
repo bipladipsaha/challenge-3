@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # ──────────────────────────────────────────────
+  # Postgres Database
+  # ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: carboniq_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-carboniq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-carboniq_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-carboniq_dev}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U carboniq -d carboniq_dev']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - carboniq_network
+
+  # ──────────────────────────────────────────────
+  # Redis Cache
+  # ──────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: carboniq_redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - carboniq_network
+
+  # ──────────────────────────────────────────────
+  # MailHog (Mock Email Server)
+  # ──────────────────────────────────────────────
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: carboniq_mailhog
+    ports:
+      - '1025:1025' # SMTP server
+      - '8025:8025' # Web UI
+    networks:
+      - carboniq_network
+
+  # ──────────────────────────────────────────────
+  # Backend (Express API)
+  # ──────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: carboniq_backend
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-carboniq}:${POSTGRES_PASSWORD:-carboniq_dev}@postgres:5432/${POSTGRES_DB:-carboniq_dev}
+      - REDIS_URL=redis://redis:6379
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - JWT_SECRET=${JWT_SECRET:-dev_jwt_secret}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-dev_jwt_refresh_secret}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    ports:
+      - '5000:5000'
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - carboniq_network
+
+  # ──────────────────────────────────────────────
+  # ML Service (FastAPI)
+  # ──────────────────────────────────────────────
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: carboniq_ml
+    environment:
+      - ENV=development
+      - PORT=8000
+    ports:
+      - '8000:8000'
+
+    networks:
+      - carboniq_network
+
+  # ──────────────────────────────────────────────
+  # Frontend (Next.js)
+  # ──────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: carboniq_frontend
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1
+    ports:
+      - '3000:3000'
+
+    depends_on:
+      - backend
+    networks:
+      - carboniq_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  carboniq_network:
+    driver: bridge

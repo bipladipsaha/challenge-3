@@ -6,6 +6,7 @@
 
 import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth';
+import { getUserId } from '../utils/authHelper';
 import * as entriesService from '../services/entries/entries.service';
 import { queryEntriesSchema } from '../validators/entries.validator';
 import { HttpStatus, API_STATUS } from '../constants';
@@ -23,7 +24,7 @@ export const createEntry = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const entry = await entriesService.createEntry(req.userId!, req.body);
+    const entry = await entriesService.createEntry(getUserId(req), req.body);
     res.status(HttpStatus.CREATED).json({ status: API_STATUS.SUCCESS, data: entry });
   } catch (error) {
     next(error);
@@ -44,7 +45,7 @@ export const getEntries = async (
 ): Promise<void> => {
   try {
     const query = queryEntriesSchema.parse(req.query);
-    const result = await entriesService.getEntries(req.userId!, query);
+    const result = await entriesService.getEntries(getUserId(req), query);
     res.status(HttpStatus.OK).json({ status: API_STATUS.SUCCESS, data: result });
   } catch (error) {
     next(error);
@@ -64,7 +65,7 @@ export const getEntryById = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const entry = await entriesService.getEntryById(req.userId!, req.params.id);
+    const entry = await entriesService.getEntryById(getUserId(req), req.params.id);
     res.status(HttpStatus.OK).json({ status: API_STATUS.SUCCESS, data: entry });
   } catch (error) {
     next(error);
@@ -84,7 +85,7 @@ export const updateEntry = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const entry = await entriesService.updateEntry(req.userId!, req.params.id, req.body);
+    const entry = await entriesService.updateEntry(getUserId(req), req.params.id, req.body);
     res.status(HttpStatus.OK).json({ status: API_STATUS.SUCCESS, data: entry });
   } catch (error) {
     next(error);
@@ -104,7 +105,7 @@ export const deleteEntry = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    await entriesService.deleteEntry(req.userId!, req.params.id);
+    await entriesService.deleteEntry(getUserId(req), req.params.id);
     res.status(HttpStatus.NO_CONTENT).send();
   } catch (error) {
     next(error);
@@ -124,7 +125,7 @@ export const getSummary = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const summary = await entriesService.getSummary(req.userId!);
+    const summary = await entriesService.getSummary(getUserId(req));
     res.status(HttpStatus.OK).json({ status: API_STATUS.SUCCESS, data: summary });
   } catch (error) {
     next(error);

@@ -6,6 +6,7 @@
 
 import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth';
+import { getUserId } from '../utils/authHelper';
 import * as goalsService from '../services/goals/goals.service';
 import { HttpStatus, API_STATUS } from '../constants';
 
@@ -18,7 +19,7 @@ import { HttpStatus, API_STATUS } from '../constants';
  */
 export const createGoal = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const goal = await goalsService.createGoal(req.userId!, req.body);
+    const goal = await goalsService.createGoal(getUserId(req), req.body);
     res.status(HttpStatus.CREATED).json({ status: API_STATUS.SUCCESS, data: goal });
   } catch (error) {
     next(error);
@@ -34,7 +35,7 @@ export const createGoal = async (req: AuthenticatedRequest, res: Response, next:
  */
 export const getGoals = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const goals = await goalsService.getGoals(req.userId!);
+    const goals = await goalsService.getGoals(getUserId(req));
     res.status(HttpStatus.OK).json({ status: API_STATUS.SUCCESS, data: goals });
   } catch (error) {
     next(error);
@@ -50,7 +51,7 @@ export const getGoals = async (req: AuthenticatedRequest, res: Response, next: N
  */
 export const getGoalById = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const goal = await goalsService.getGoalById(req.userId!, req.params.id);
+    const goal = await goalsService.getGoalById(getUserId(req), req.params.id);
     res.status(HttpStatus.OK).json({ status: API_STATUS.SUCCESS, data: goal });
   } catch (error) {
     next(error);
@@ -66,7 +67,7 @@ export const getGoalById = async (req: AuthenticatedRequest, res: Response, next
  */
 export const updateGoal = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const goal = await goalsService.updateGoal(req.userId!, req.params.id, req.body);
+    const goal = await goalsService.updateGoal(getUserId(req), req.params.id, req.body);
     res.status(HttpStatus.OK).json({ status: API_STATUS.SUCCESS, data: goal });
   } catch (error) {
     next(error);
@@ -82,7 +83,7 @@ export const updateGoal = async (req: AuthenticatedRequest, res: Response, next:
  */
 export const deleteGoal = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await goalsService.deleteGoal(req.userId!, req.params.id);
+    await goalsService.deleteGoal(getUserId(req), req.params.id);
     res.status(HttpStatus.NO_CONTENT).send();
   } catch (error) {
     next(error);

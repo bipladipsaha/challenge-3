@@ -12,6 +12,7 @@
 
 import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth';
+import { getUserId } from '../utils/authHelper';
 import { aiService } from '../services/ai/GeminiService';
 import * as entriesService from '../services/entries/entries.service';
 import { calculateSustainabilityScore, predictFutureEmissions } from '../utils/carbonCalculator';
@@ -30,7 +31,7 @@ export const getAdvice = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const summary = await entriesService.getSummary(req.userId!);
+    const summary = await entriesService.getSummary(getUserId(req));
     const advice = await aiService.generateCarbonAdvice(summary);
     res.status(HttpStatus.OK).json({ status: API_STATUS.SUCCESS, data: { advice } });
   } catch (error) {
@@ -51,7 +52,7 @@ export const getHabitAnalysis = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const result = await entriesService.getEntries(req.userId!, {
+    const result = await entriesService.getEntries(getUserId(req), {
       page: 1,
       limit: 100,
       sortBy: 'date',
@@ -99,7 +100,7 @@ export const generateChallenges = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const summary = await entriesService.getSummary(req.userId!);
+    const summary = await entriesService.getSummary(getUserId(req));
     const challenges = await aiService.generateChallenges(summary);
     res.status(HttpStatus.OK).json({ status: API_STATUS.SUCCESS, data: { challenges } });
   } catch (error) {
@@ -121,7 +122,7 @@ export const getSustainabilityScore = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const summary = await entriesService.getSummary(req.userId!);
+    const summary = await entriesService.getSummary(getUserId(req));
     const scoreResult = calculateSustainabilityScore(summary.total, summary.byCategory);
 
     res.status(HttpStatus.OK).json({
@@ -148,7 +149,7 @@ export const predictEmissions = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const summary = await entriesService.getSummary(req.userId!);
+    const summary = await entriesService.getSummary(getUserId(req));
     const monthlyTotals = summary.monthlyTrend.map(
       (m: { total: number; month: string }) => m.total,
     );

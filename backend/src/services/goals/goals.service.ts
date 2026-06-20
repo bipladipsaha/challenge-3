@@ -1,5 +1,12 @@
+/**
+ * @module goalsService
+ * @description Service layer for sustainability goal management.
+ * Handles CRUD operations with user ownership validation.
+ * Follows the Repository Pattern via Prisma ORM.
+ */
+
 import prisma from '../../config/database';
-import { AppError } from '../../middlewares/errorHandler';
+import { NotFoundError } from '../../errors/AppError';
 import { CreateGoalInput, UpdateGoalInput } from '../../validators/entries.validator';
 
 export const createGoal = async (userId: string, data: CreateGoalInput) => {
@@ -24,7 +31,7 @@ export const getGoals = async (userId: string) => {
 export const getGoalById = async (userId: string, goalId: string) => {
   const goal = await prisma.goal.findUnique({ where: { id: goalId } });
   if (!goal || goal.userId !== userId) {
-    throw new AppError('Goal not found.', 404);
+    throw new NotFoundError('Goal not found.');
   }
   return goal;
 };
@@ -36,7 +43,7 @@ export const updateGoal = async (
 ) => {
   const existing = await prisma.goal.findUnique({ where: { id: goalId } });
   if (!existing || existing.userId !== userId) {
-    throw new AppError('Goal not found.', 404);
+    throw new NotFoundError('Goal not found.');
   }
 
   return prisma.goal.update({

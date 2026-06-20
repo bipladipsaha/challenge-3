@@ -1,5 +1,12 @@
+/**
+ * @module entriesService
+ * @description Service layer for carbon emission entries.
+ * Handles CRUD operations, paginated queries, aggregation summaries,
+ * and Redis cache invalidation. Follows the Repository Pattern via Prisma.
+ */
+
 import prisma from '../../config/database';
-import { AppError } from '../../middlewares/errorHandler';
+import { NotFoundError } from '../../errors/AppError';
 import {
   CreateEntryInput,
   UpdateEntryInput,
@@ -7,6 +14,7 @@ import {
 } from '../../validators/entries.validator';
 import { EmissionCategory, Prisma } from '@prisma/client';
 import { redisClient } from '../../config/redis';
+import { CACHE_CONFIG, TREND_MONTHS } from '../../constants';
 
 /**
  * Creates a new carbon entry.
@@ -23,7 +31,7 @@ export const createEntry = async (userId: string, data: CreateEntryInput) => {
   });
 
   if (redisClient.isOpen) {
-    await redisClient.del(`summary:${userId}`);
+    await redisClient.del(`${CACHE_CONFIG.SUMMARY_KEY_PREFIX}${userId}`);
   }
 
   return entry;
@@ -73,7 +81,7 @@ export const getEntryById = async (userId: string, entryId: string) => {
   });
 
   if (!entry || entry.userId !== userId) {
-    throw new AppError('Carbon entry not found.', 404);
+    throw new NotFoundError('Carbon entry not found.');
   }
 
   return entry;
@@ -92,7 +100,7 @@ export const updateEntry = async (
   });
 
   if (!existing || existing.userId !== userId) {
-    throw new AppError('Carbon entry not found.', 404);
+    throw new NotFoundError('Carbon entry not found.');
   }
 
   const updated = await prisma.carbonEntry.update({
@@ -106,7 +114,7 @@ export const updateEntry = async (
   });
 
   if (redisClient.isOpen) {
-    await redisClient.del(`summary:${userId}`);
+    await redisClient.del(`${CACHE_CONFIG.SUMMARY_KEY_PREFIX}${userId}`);
   }
 
   return updated;
@@ -121,13 +129,13 @@ export const deleteEntry = async (userId: string, entryId: string) => {
   });
 
   if (!existing || existing.userId !== userId) {
-    throw new AppError('Carbon entry not found.', 404);
+    throw new NotFoundError('Carbon entry not found.');
   }
 
   await prisma.carbonEntry.delete({ where: { id: entryId } });
 
   if (redisClient.isOpen) {
-    await redisClient.del(`summary:${userId}`);
+    await redisClient.del(`${CACHE_CONFIG.SUMMARY_KEY_PREFIX}${userId}`);
   }
 };
 
@@ -136,7 +144,7 @@ export const deleteEntry = async (userId: string, entryId: string) => {
  */
 export const getSummary = async (userId: string) => {
   if (redisClient.isOpen) {
-    const cached = await redisClient.get(`summary:${userId}`);
+    const cached = await redisClient.get(`${CACHE_CONFIG.SUMMARY_KEY_PREFIX}${userId}`);
     if (cached) {
       return JSON.parse(cached);
     }
@@ -158,7 +166,7 @@ export const getSummary = async (userId: string) => {
 
   // Monthly trend for the last 12 months
   const twelveMonthsAgo = new Date();
-  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - TREND_MONTHS);
 
   const monthlyEntries = await prisma.carbonEntry.findMany({
     where: {
@@ -195,7 +203,11 @@ export const getSummary = async (userId: string) => {
   };
 
   if (redisClient.isOpen) {
-    await redisClient.set(`summary:${userId}`, JSON.stringify(result), { EX: 60 * 60 }); // Cache for 1 hour
+    await redisClient.set(
+      `${CACHE_CONFIG.SUMMARY_KEY_PREFIX}${userId}`,
+      JSON.stringify(result),
+      { EX: CACHE_CONFIG.SUMMARY_TTL },
+    );
   }
 
   return result;

@@ -1,32 +1,39 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps):"
+
+  - package-ecosystem: "npm"
     directory: "/backend"
     schedule:
       interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "backend"
-    open-pull-requests-limit: 10
-    groups:
-      production-dependencies:
-        patterns:
-          - "*"
-        exclude-patterns:
-          - "@types/*"
-          - "eslint*"
-          - "prettier*"
-          - "jest*"
-          - "ts-jest*"
+    commit-message:
+      prefix: "chore(deps-backend):"
 
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
       interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "frontend"
-    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps-frontend):"
 
   - package-ecosystem: "pip"
     directory: "/ml-service"
@@ -35,7 +42,8 @@ updates:
     labels:
       - "dependencies"
       - "ml-service"
-    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps-ml):"
 
   - package-ecosystem: "docker"
     directory: "/"
@@ -44,6 +52,8 @@ updates:
     labels:
       - "dependencies"
       - "docker"
+    commit-message:
+      prefix: "chore(deps-docker):"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -52,3 +62,5 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+    commit-message:
+      prefix: "chore(deps-ci):"

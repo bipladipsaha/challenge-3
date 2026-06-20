@@ -23,11 +23,50 @@ CarbonIQ AI is an enterprise-grade platform that helps individuals understand, t
 
 The system operates on a robust microservices architecture designed for high availability and scalability.
 
+```mermaid
+graph TD
+    Client[Next.js PWA Client] --> |HTTPS / JSON| API[Express API Gateway]
+    API --> |Prisma ORM| DB[(PostgreSQL)]
+    API --> |Cache Hits| Redis[(Redis Cache)]
+    API <--> |gRPC / REST| ML[FastAPI ML Service]
+    API <--> |API| Gemini[Google Gemini AI]
+    
+    subgraph Frontend
+    Client
+    end
+    
+    subgraph Backend Services
+    API
+    DB
+    Redis
+    end
+    
+    subgraph External
+    ML
+    Gemini
+    end
+```
+
 - **Frontend (Client)**: Next.js 15 App Router application providing a responsive PWA. Utilizes `next/dynamic` for code splitting and `zustand` for state.
 - **Backend (API Layer)**: Node.js/Express service enforcing strict validation, route-limiting, and managing database connections via Prisma.
 - **Data Layer (PostgreSQL)**: Relational data store holding structured schemas for Users, Entries, Goals, and Badges.
 - **Cache Layer (Redis)**: Accelerates repetitive API requests and caches expensive summary aggregations.
 - **ML Service (FastAPI)**: Independent Python service operating regression models to forecast future carbon usage.
+
+---
+
+## 🎯 Problem Statement & ESG Alignment Matrix
+
+CarbonIQ explicitly addresses the **Carbon Footprint Awareness Platform** requirements by directly implementing the following domain-specific modules:
+
+| Requirement | Implementation Detail | Source Module |
+|-------------|----------------------|---------------|
+| **Footprint Calculator** | Dynamic aggregation of kg CO₂ equivalent across 7 categories using standard benchmarks. | `utils/carbonCalculator.ts: calculateCarbonFootprint()` |
+| **Sustainability Scoring** | Weighted AI scoring algorithm evaluating user emissions against normalized ESG benchmarks. | `utils/carbonCalculator.ts: calculateSustainabilityScore()` |
+| **AI Recommendations** | Google Gemini LLM integration identifying highest emission categories and generating localized reduction strategies. | `services/ai/GeminiService.ts: generateCarbonAdvice()` |
+| **Emission Forecasting** | Time-series linear regression models predicting 30, 90, and 365-day emission trends. | `utils/carbonCalculator.ts: predictFutureEmissions()` |
+| **Gamification** | Leaderboard generation algorithm ranking users by percentage reduction over time. | `utils/carbonCalculator.ts: generateLeaderboardStandings()` |
+| **Goal Tracking** | Automated weekly emission reduction plan generation algorithm. | `utils/carbonCalculator.ts: createWeeklyGoalPlan()` |
 
 ---
 

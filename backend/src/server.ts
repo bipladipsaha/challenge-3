@@ -14,7 +14,21 @@ import v1Router from './routes/v1';
 const app: Express = express();
 
 // Security Middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "http://localhost:3000"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(
   cors({
     origin: env.CORS_ORIGIN,

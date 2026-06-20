@@ -94,3 +94,27 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-muted-foreground/40;
 }
+
+/* ===== Accessibility: Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ===== Accessibility: Focus Indicators ===== */
+*:focus-visible {
+  @apply outline-2 outline-offset-2 outline-ring rounded;
+}
+
+/* ===== Accessibility: Skip to Content ===== */
+.skip-to-content {
+  @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50
+    focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-lg
+    focus:text-sm focus:font-medium;
+}

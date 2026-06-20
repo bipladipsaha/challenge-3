@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-export default function EmissionTrend({ monthlyTrend }: { monthlyTrend: { month: string; emissions: number; total: number }[] }) {
+export default function EmissionTrend({ monthlyTrend }: { monthlyTrend: { month: string; emissions: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <AreaChart data={monthlyTrend}>

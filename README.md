@@ -14,98 +14,120 @@ CarbonIQ AI is an enterprise-grade platform that helps individuals understand, t
 *   **📊 Smart Analytics & Predictive Modeling**: Track emissions via heatmaps, charts, and predict future trends (30/90/365 days) using Scikit-Learn.
 *   **🏆 Gamified Challenges**: Earn badges, complete sustainability challenges, and climb the community leaderboard.
 *   **📱 Progressive Web App (PWA)**: Full Next.js 15 frontend with offline support, syncing carbon logs when connectivity is restored.
-*   **🔒 Enterprise Security**: OWASP Top 10 compliance, rate limiting, JWT token rotation, structured logging (Pino), and XSS prevention.
+*   **🔒 Enterprise Security**: OWASP Top 10 compliance, HTTPOnly Secure Cookies, rate limiting, JWT token rotation, structured logging (Pino), and XSS/CSRF prevention.
+*   **⚡ High Performance**: Redis query caching, React Suspense lazy loading, and optimized Prisma database access.
 
 ---
 
-## 🏗️ Architecture & Tech Stack
+## 🏗️ Architecture Overview
 
-CarbonIQ AI is built using a modern, scalable microservices architecture. See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed diagrams and design patterns.
+The system operates on a robust microservices architecture designed for high availability and scalability.
 
-### Frontend (Next.js 15 App Router)
-*   **Framework**: Next.js 15, React 19, TypeScript
-*   **State Management**: Zustand
-*   **Styling**: TailwindCSS, Shadcn UI (Custom Dark/Light Theme), Framer Motion
-*   **Features**: PWA (`next-pwa`), Recharts (Data Visualization)
-
-### Backend API (Node.js & Express)
-*   **Core**: TypeScript, Express, Prisma ORM
-*   **Database**: PostgreSQL
-*   **Caching**: Redis (Session & Query Cache)
-*   **Architecture**: Service Layer Pattern, Dependency Injection (AI & Email Interfaces)
-*   **Validation**: Zod (Schema & Environment validation)
-
-### Machine Learning Service (Python)
-*   **Framework**: FastAPI, Scikit-Learn, Pandas
-*   **Model**: Gradient Boosting Regressor (Emission Predictions)
-
-### DevOps & Tooling
-*   **Containerization**: Docker & Docker Compose (Multi-stage builds)
-*   **CI/CD**: GitHub Actions (Lint, Test, CodeQL, Build)
-*   **Local Email**: MailHog
-*   **Version Control**: Husky, Commitlint, Lint-staged
+- **Frontend (Client)**: Next.js 15 App Router application providing a responsive PWA. Utilizes `next/dynamic` for code splitting and `zustand` for state.
+- **Backend (API Layer)**: Node.js/Express service enforcing strict validation, route-limiting, and managing database connections via Prisma.
+- **Data Layer (PostgreSQL)**: Relational data store holding structured schemas for Users, Entries, Goals, and Badges.
+- **Cache Layer (Redis)**: Accelerates repetitive API requests and caches expensive summary aggregations.
+- **ML Service (FastAPI)**: Independent Python service operating regression models to forecast future carbon usage.
 
 ---
 
-## 🛠️ Getting Started (Local Development)
+## 🛠️ Environment Variables Configuration
 
-### Prerequisites
-*   [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
-*   [Node.js](https://nodejs.org/) (v20+)
-*   [Python](https://www.python.org/) (3.11+)
+Copy `.env.example` in both the root and `backend/` directories to `.env`.
 
-### 1. Setup Environment
-Copy the example environment file and add your Google Gemini API key (optional: if omitted, the app will use deterministic mock AI).
-
-```bash
-cp .env.example .env
+**Backend (`backend/.env`):**
+```env
+NODE_ENV=development # or production
+PORT=5000
+DATABASE_URL=postgresql://carboniq:carboniq_dev@postgres:5432/carboniq_dev
+REDIS_URL=redis://redis:6379
+JWT_SECRET=YOUR_32_CHAR_SECRET
+JWT_REFRESH_SECRET=YOUR_32_CHAR_REFRESH_SECRET
+GEMINI_API_KEY=YOUR_GEMINI_KEY # Optional
 ```
 
-### 2. Start the Infrastructure (Docker)
-Start the PostgreSQL database, Redis cache, and MailHog services:
+---
 
+## 🐳 Docker Setup & Deployment
+
+CarbonIQ supports a fully containerized deployment environment.
+
+### 1. Start all Services
+Run the entire stack (Frontend, Backend, ML Service, Postgres, Redis):
 ```bash
-docker-compose up -d postgres redis mailhog
+docker-compose up --build -d
 ```
 
-### 3. Setup Backend
+### 2. Verify Services
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000
+- **ML Service**: http://localhost:8000
+- **Swagger Docs**: http://localhost:5000/api-docs
+
+### 3. Teardown
+```bash
+docker-compose down -v
+```
+
+---
+
+## 📖 API Documentation
+
+The backend exposes a fully documented OpenAPI specification.
+Once the backend is running, navigate to:
+**👉 http://localhost:5000/api-docs**
+
+Endpoints include:
+- `POST /api/v1/auth/register` (Registers a user, sets HTTPOnly cookies)
+- `POST /api/v1/auth/login` (Authenticates user, sets HTTPOnly cookies)
+- `GET /api/v1/entries` (Fetches carbon logs)
+- `POST /api/v1/entries` (Submits a new carbon log)
+- `GET /api/v1/ai/score` (Retrieves AI-calculated sustainability score)
+
+---
+
+## 🧪 Testing Instructions
+
+The project features a comprehensive testing suite spanning all microservices.
+
+### Backend Tests (Jest + Supertest)
 ```bash
 cd backend
 npm install
-npx prisma db push
-npm run dev
+npm run test
 ```
-*   API runs on `http://localhost:5000`
-*   Swagger Docs available at `http://localhost:5000/api-docs`
 
-### 4. Setup ML Service
-```bash
-cd ml-service
-python -m venv venv
-source venv/bin/activate  # (Windows: venv\Scripts\activate)
-pip install -r requirements.txt
-uvicorn src.main:app --reload --port 8000
-```
-*   ML API runs on `http://localhost:8000`
-*   Train the model first via: `POST http://localhost:8000/api/train`
-
-### 5. Setup Frontend
+### Frontend Tests (Jest + React Testing Library)
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run test
 ```
-*   App runs on `http://localhost:3000`
+
+### ML Service Tests (Pytest)
+```bash
+cd ml-service
+pip install -r requirements-dev.txt
+pytest
+```
 
 ---
 
-## 🧪 Testing Strategy
+## 🚨 Troubleshooting Guide
 
-*   **Unit & Integration Tests**: Jest & Supertest (Backend)
-*   **E2E Tests**: Playwright (Frontend)
-*   **CI Validation**: Run `npm run test` in respective workspaces.
+### Issue: "Authentication failed. Token not found."
+**Cause**: The frontend cannot read the auth token because it was migrated to `HTTPOnly` Secure Cookies.
+**Solution**: Ensure you access the app via `http://localhost:3000` (or the exact CORS origin). If testing via Postman, ensure the Cookie headers are correctly attached.
+
+### Issue: "Redis Connection Refused"
+**Cause**: Redis container is not running or the backend is configured with the wrong host.
+**Solution**: Use `REDIS_URL=redis://localhost:6379` for local Node execution, and `REDIS_URL=redis://redis:6379` when running via Docker Compose.
+
+### Issue: "Docker build fails on pip install (httpx)"
+**Cause**: Dependency version mismatch.
+**Solution**: We have resolved this in the latest commit. Please run `docker-compose build --no-cache`.
 
 ---
 
 ## 📜 License
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details. Developed for the hackathon.
+This project is licensed under the MIT License. Developed for the sustainability challenge.

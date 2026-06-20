@@ -119,7 +119,7 @@ export const getSustainabilityScore = async (req: AuthenticatedRequest, res: Res
     const totalEmissions = summary.total;
 
     // Calculate scores based on emission benchmarks (lower is better)
-    const categoryScores = summary.byCategory.map((cat) => {
+    const categoryScores = summary.byCategory.map((cat: { category: string; total: number; count: number }) => {
       const benchmarks: Record<string, number> = {
         TRAVEL: 200,
         ELECTRICITY: 150,
@@ -136,7 +136,7 @@ export const getSustainabilityScore = async (req: AuthenticatedRequest, res: Res
 
     const overallScore =
       categoryScores.length > 0
-        ? Math.round(categoryScores.reduce((sum, c) => sum + c.score, 0) / categoryScores.length)
+        ? Math.round(categoryScores.reduce((sum: number, c: { score: number }) => sum + c.score, 0) / categoryScores.length)
         : 100;
 
     res.status(200).json({
@@ -188,8 +188,8 @@ export const predictEmissions = async (req: AuthenticatedRequest, res: Response,
       return;
     }
 
-    const values = monthlyData.map((m) => m.total);
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    const values = monthlyData.map((m: { total: number; month: string }) => m.total);
+    const avg = values.reduce((a: number, b: number) => a + b, 0) / values.length;
     const trend =
       values.length > 1 ? (values[values.length - 1] - values[0]) / (values.length - 1) : 0;
 

@@ -6,12 +6,12 @@ jest.mock('recharts', () => {
   const OriginalModule = jest.requireActual('recharts');
   return {
     ...OriginalModule,
-    ResponsiveContainer: ({ children }: any) => (
+    ResponsiveContainer: ({ children }: React.PropsWithChildren<unknown>) => (
       <div data-testid="responsive-container" style={{ width: '100%', height: '300px' }}>
         {children}
       </div>
     ),
-    AreaChart: ({ children }: any) => <div data-testid="area-chart">{children}</div>,
+    AreaChart: ({ children }: React.PropsWithChildren<unknown>) => <div data-testid="area-chart">{children}</div>,
     XAxis: () => <div data-testid="x-axis" />,
     YAxis: () => <div data-testid="y-axis" />,
     CartesianGrid: () => <div data-testid="cartesian-grid" />,

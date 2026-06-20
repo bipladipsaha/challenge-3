@@ -6,14 +6,16 @@ import {
   TrendingUp,
   Leaf,
   Zap,
-  Car,
-  UtensilsCrossed,
-  ShoppingBag,
-  Droplets,
-  Trash2,
   ArrowUpRight,
   Brain,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import {
+  mockMonthlyTrend,
+  mockCategoryData,
+  mockRecentActivities,
+  mockAiInsights,
+} from '@/lib/mockData';
 import dynamic from 'next/dynamic';
 
 const EmissionTrend = dynamic(() => import('@/components/dashboard/EmissionTrend'), {
@@ -26,42 +28,7 @@ const CategoryBreakdown = dynamic(() => import('@/components/dashboard/CategoryB
   loading: () => <div className="h-[200px] flex items-center justify-center text-muted-foreground">Loading chart...</div>,
 });
 
-// Mock data for demonstration
-const monthlyTrend = [
-  { month: 'Jan', emissions: 245 },
-  { month: 'Feb', emissions: 231 },
-  { month: 'Mar', emissions: 218 },
-  { month: 'Apr', emissions: 205 },
-  { month: 'May', emissions: 198 },
-  { month: 'Jun', emissions: 186 },
-  { month: 'Jul', emissions: 174 },
-  { month: 'Aug', emissions: 168 },
-  { month: 'Sep', emissions: 155 },
-  { month: 'Oct', emissions: 148 },
-  { month: 'Nov', emissions: 142 },
-  { month: 'Dec', emissions: 135 },
-];
-
-const categoryData = [
-  { name: 'Travel', value: 35, color: '#10b981' },
-  { name: 'Electricity', value: 25, color: '#3b82f6' },
-  { name: 'Food', value: 20, color: '#f59e0b' },
-  { name: 'Shopping', value: 12, color: '#8b5cf6' },
-  { name: 'Waste', value: 8, color: '#ef4444' },
-];
-
-const recentActivities = [
-  { action: 'Logged transportation entry', time: '2 hours ago', icon: Car, amount: 12.5 },
-  { action: 'Electricity usage recorded', time: '5 hours ago', icon: Zap, amount: 8.2 },
-  { action: 'Meal log updated', time: '1 day ago', icon: UtensilsCrossed, amount: 4.1 },
-  { action: 'Shopping emissions added', time: '2 days ago', icon: ShoppingBag, amount: 15.3 },
-];
-
-const aiInsights = [
-  'Your weekend travel emissions are 40% higher than weekdays. Consider carpooling.',
-  'Switching to LED bulbs could reduce electricity emissions by 12% monthly.',
-  'Your food carbon footprint decreased 8% this month — great progress!',
-];
+// Extracted mock data to @/lib/mockData
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -117,13 +84,13 @@ export default function DashboardPage() {
         {/* Emission Trend */}
         <motion.div variants={fadeInUp} className="lg:col-span-2 glass-card p-6">
           <h3 className="text-lg font-semibold mb-4">Emission Trend</h3>
-          <EmissionTrend monthlyTrend={monthlyTrend} />
+          <EmissionTrend monthlyTrend={mockMonthlyTrend} />
         </motion.div>
 
         {/* Category Breakdown */}
         <motion.div variants={fadeInUp} className="glass-card p-6">
           <h3 className="text-lg font-semibold mb-4">By Category</h3>
-          <CategoryBreakdown categoryData={categoryData} />
+          <CategoryBreakdown categoryData={mockCategoryData} />
         </motion.div>
       </div>
 
@@ -133,7 +100,7 @@ export default function DashboardPage() {
         <motion.div variants={fadeInUp} className="glass-card p-6">
           <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
           <div className="space-y-4">
-            {recentActivities.map((activity, idx) => (
+            {mockRecentActivities.map((activity, idx) => (
               <div key={idx} className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <activity.icon className="h-5 w-5 text-primary" aria-hidden="true" />
@@ -157,7 +124,7 @@ export default function DashboardPage() {
             <h3 className="text-lg font-semibold">AI Insights</h3>
           </div>
           <div className="space-y-3">
-            {aiInsights.map((insight, idx) => (
+            {mockAiInsights.map((insight, idx) => (
               <div
                 key={idx}
                 className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10 text-sm text-muted-foreground leading-relaxed"

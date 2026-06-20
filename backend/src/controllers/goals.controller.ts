@@ -1,47 +1,89 @@
+/**
+ * @module goalsController
+ * @description Handles all HTTP requests related to sustainability goal management.
+ * Provides endpoints for creating, retrieving, updating, and deleting user goals.
+ */
+
 import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth';
 import * as goalsService from '../services/goals/goals.service';
+import { HttpStatus, API_STATUS } from '../constants';
 
-export const createGoal = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+/**
+ * Creates a new sustainability goal for the authenticated user.
+ *
+ * @param req - Authenticated request containing goal creation data.
+ * @param res - Express response object.
+ * @param next - Express next function for error handling.
+ */
+export const createGoal = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const goal = await goalsService.createGoal(req.userId!, req.body);
-    res.status(201).json({ status: 'success', data: goal });
+    res.status(HttpStatus.CREATED).json({ status: API_STATUS.SUCCESS, data: goal });
   } catch (error) {
     next(error);
   }
 };
 
-export const getGoals = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+/**
+ * Retrieves all sustainability goals for the authenticated user.
+ *
+ * @param req - Authenticated request containing the user ID.
+ * @param res - Express response object.
+ * @param next - Express next function for error handling.
+ */
+export const getGoals = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const goals = await goalsService.getGoals(req.userId!);
-    res.status(200).json({ status: 'success', data: goals });
+    res.status(HttpStatus.OK).json({ status: API_STATUS.SUCCESS, data: goals });
   } catch (error) {
     next(error);
   }
 };
 
-export const getGoalById = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+/**
+ * Retrieves a specific sustainability goal by its ID.
+ *
+ * @param req - Authenticated request containing the goal ID parameter.
+ * @param res - Express response object.
+ * @param next - Express next function for error handling.
+ */
+export const getGoalById = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const goal = await goalsService.getGoalById(req.userId!, req.params.id);
-    res.status(200).json({ status: 'success', data: goal });
+    res.status(HttpStatus.OK).json({ status: API_STATUS.SUCCESS, data: goal });
   } catch (error) {
     next(error);
   }
 };
 
-export const updateGoal = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+/**
+ * Updates an existing sustainability goal.
+ *
+ * @param req - Authenticated request containing update data and goal ID.
+ * @param res - Express response object.
+ * @param next - Express next function for error handling.
+ */
+export const updateGoal = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const goal = await goalsService.updateGoal(req.userId!, req.params.id, req.body);
-    res.status(200).json({ status: 'success', data: goal });
+    res.status(HttpStatus.OK).json({ status: API_STATUS.SUCCESS, data: goal });
   } catch (error) {
     next(error);
   }
 };
 
-export const deleteGoal = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+/**
+ * Deletes a specific sustainability goal by its ID.
+ *
+ * @param req - Authenticated request containing the goal ID.
+ * @param res - Express response object.
+ * @param next - Express next function for error handling.
+ */
+export const deleteGoal = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     await goalsService.deleteGoal(req.userId!, req.params.id);
-    res.status(204).send();
+    res.status(HttpStatus.NO_CONTENT).send();
   } catch (error) {
     next(error);
   }

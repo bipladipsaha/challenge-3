@@ -13,7 +13,7 @@ const SALT_ROUNDS = 12;
  */
 const generateAccessToken = (userId: string, role: string): string => {
   return jwt.sign({ userId, role }, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRES_IN as any,
+    expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'],
   });
 };
 
@@ -22,7 +22,7 @@ const generateAccessToken = (userId: string, role: string): string => {
  */
 const generateRefreshToken = (userId: string): string => {
   return jwt.sign({ userId }, env.JWT_REFRESH_SECRET, {
-    expiresIn: env.JWT_REFRESH_EXPIRES_IN as any,
+    expiresIn: env.JWT_REFRESH_EXPIRES_IN as jwt.SignOptions['expiresIn'],
   });
 };
 

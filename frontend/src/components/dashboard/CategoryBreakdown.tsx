@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-export default function CategoryBreakdown({ categoryData }: { categoryData: any[] }) {
+export default function CategoryBreakdown({ categoryData }: { categoryData: { name: string; value: number; color: string }[] }) {
   return (
     <>
       <ResponsiveContainer width="100%" height={200}>

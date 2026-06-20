@@ -21,7 +21,7 @@ export class GeminiService implements AiService {
     }
   }
 
-  async generateCarbonAdvice(lifestyleData: any): Promise<string> {
+  async generateCarbonAdvice(lifestyleData: unknown): Promise<string> {
     if (this.isMockMode || !this.ai) {
       return 'Mock Advice: Based on your recent travel logs, switching to public transport could reduce your emissions by 18% this month.';
     }
@@ -39,7 +39,7 @@ export class GeminiService implements AiService {
     }
   }
 
-  async generateHabitAnalysis(entries: any[]): Promise<string> {
+  async generateHabitAnalysis(entries: unknown[]): Promise<string> {
     if (this.isMockMode || !this.ai) {
       return 'Mock Analysis: You produce most emissions during weekends due to vehicle usage.';
     }
@@ -57,7 +57,7 @@ export class GeminiService implements AiService {
     }
   }
 
-  async chatWithEcoCoach(message: string, history: any[]): Promise<string> {
+  async chatWithEcoCoach(message: string, history: unknown[]): Promise<string> {
     if (this.isMockMode || !this.ai) {
       return `Mock Coach: That's a great question about "${message}". Using reusable bags is a great first step!`;
     }
@@ -79,7 +79,7 @@ export class GeminiService implements AiService {
     }
   }
 
-  async generateChallenges(userProfile: any): Promise<any[]> {
+  async generateChallenges(userProfile: unknown): Promise<unknown[]> {
     if (this.isMockMode || !this.ai) {
       return [
         { title: 'Bike 20km', description: 'Use a bicycle for 20km this week instead of a car.', difficulty: 'MEDIUM' },

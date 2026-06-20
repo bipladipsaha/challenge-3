@@ -1,6 +1,6 @@
 export interface AiService {
-  generateCarbonAdvice(lifestyleData: any): Promise<string>;
-  generateHabitAnalysis(entries: any[]): Promise<string>;
-  chatWithEcoCoach(message: string, history: any[]): Promise<string>;
-  generateChallenges(userProfile: any): Promise<any[]>;
+  generateCarbonAdvice(lifestyleData: unknown): Promise<string>;
+  generateHabitAnalysis(entries: unknown[]): Promise<string>;
+  chatWithEcoCoach(message: string, history: unknown[]): Promise<string>;
+  generateChallenges(userProfile: unknown): Promise<unknown[]>;
 }

@@ -16,6 +16,7 @@ CarbonIQ AI is an enterprise-grade platform that helps individuals understand, t
 *   **📱 Progressive Web App (PWA)**: Full Next.js 15 frontend with offline support, syncing carbon logs when connectivity is restored.
 *   **🔒 Enterprise Security**: OWASP Top 10 compliance, HTTPOnly Secure Cookies, rate limiting, JWT token rotation, structured logging (Pino), and XSS/CSRF prevention.
 *   **⚡ High Performance**: Redis query caching, React Suspense lazy loading, and optimized Prisma database access.
+*   **♿ WCAG 2.2 AA Accessible**: Semantic landmarks, aria-current navigation, prefers-reduced-motion, skip-to-content links, and keyboard-first design.
 
 ---
 
@@ -47,6 +48,77 @@ graph TD
     end
 ```
 
+### Authentication & Authorization Sequence
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant A as API Gateway
+    participant D as PostgreSQL
+    participant R as Redis
+
+    C->>A: POST /auth/login (email, password)
+    A->>D: Lookup user by email
+    D-->>A: User record + passwordHash
+    A->>A: bcrypt.compare(password, hash)
+    A->>A: Generate JWT (access + refresh)
+    A->>D: Store hashed refreshToken
+    A-->>C: Set-Cookie: accessToken, refreshToken (HTTPOnly, Secure, SameSite)
+
+    C->>A: GET /entries (Cookie: accessToken)
+    A->>A: jwt.verify(accessToken)
+    A->>R: Check cache (summary:userId)
+    R-->>A: Cache hit / miss
+    A->>D: Query if cache miss
+    D-->>A: Data
+    A->>R: Cache result (TTL: 1hr)
+    A-->>C: JSON response
+```
+
+### Entity-Relationship Diagram
+
+```mermaid
+erDiagram
+    User ||--o{ CarbonEntry : logs
+    User ||--o{ Goal : sets
+    User ||--o{ Badge : earns
+    User {
+        string id PK
+        string email UK
+        string passwordHash
+        string firstName
+        string lastName
+        string role
+        string refreshToken
+        boolean isEmailVerified
+        datetime createdAt
+    }
+    CarbonEntry {
+        string id PK
+        string userId FK
+        enum category
+        float amount
+        string description
+        datetime date
+    }
+    Goal {
+        string id PK
+        string userId FK
+        string title
+        float targetAmount
+        float currentAmount
+        enum status
+        datetime deadline
+    }
+    Badge {
+        string id PK
+        string userId FK
+        string name
+        string description
+        datetime awardedAt
+    }
+```
+
 - **Frontend (Client)**: Next.js 15 App Router application providing a responsive PWA. Utilizes `next/dynamic` for code splitting and `zustand` for state.
 - **Backend (API Layer)**: Node.js/Express service enforcing strict validation, route-limiting, and managing database connections via Prisma.
 - **Data Layer (PostgreSQL)**: Relational data store holding structured schemas for Users, Entries, Goals, and Badges.
@@ -65,8 +137,73 @@ CarbonIQ explicitly addresses the **Carbon Footprint Awareness Platform** requir
 | **Sustainability Scoring** | Weighted AI scoring algorithm evaluating user emissions against normalized ESG benchmarks. | `utils/carbonCalculator.ts: calculateSustainabilityScore()` |
 | **AI Recommendations** | Google Gemini LLM integration identifying highest emission categories and generating localized reduction strategies. | `services/ai/GeminiService.ts: generateCarbonAdvice()` |
 | **Emission Forecasting** | Time-series linear regression models predicting 30, 90, and 365-day emission trends. | `utils/carbonCalculator.ts: predictFutureEmissions()` |
+| **Sustainability Report** | Comprehensive report aggregating score, predictions, recommendations, and trend data. | `utils/carbonCalculator.ts: generateSustainabilityReport()` |
 | **Gamification** | Leaderboard generation algorithm ranking users by percentage reduction over time. | `utils/carbonCalculator.ts: generateLeaderboardStandings()` |
 | **Goal Tracking** | Automated weekly emission reduction plan generation algorithm. | `utils/carbonCalculator.ts: createWeeklyGoalPlan()` |
+| **Habit Analysis** | AI-powered analysis of carbon emission habits detecting unhealthy patterns. | `services/ai/GeminiService.ts: generateHabitAnalysis()` |
+| **Eco Coach Chat** | Interactive AI chatbot providing real-time sustainability guidance. | `services/ai/GeminiService.ts: chatWithEcoCoach()` |
+| **Challenge System** | Personalized sustainability challenges generated based on user emission profiles. | `services/ai/GeminiService.ts: generateChallenges()` |
+
+---
+
+## 🔒 Security Architecture
+
+CarbonIQ implements defense-in-depth security across all layers:
+
+| Layer | Protection | Implementation |
+|-------|-----------|----------------|
+| **Transport** | HTTPS, HSTS | `Strict-Transport-Security: max-age=31536000` |
+| **Authentication** | JWT with rotation | HTTPOnly Secure SameSite cookies, bcrypt hashing |
+| **Authorization** | Role-based access | `authenticate` + `authorize` middleware |
+| **Input Validation** | Zod schemas | Server-side validation middleware on all routes |
+| **Rate Limiting** | IP-based throttling | 100 req/15min general, 10 req/hr auth |
+| **XSS Prevention** | CSP + Helmet | Content-Security-Policy headers |
+| **Clickjacking** | Frame denial | `X-Frame-Options: DENY`, `frame-ancestors 'none'` |
+| **CSRF** | SameSite cookies | `SameSite=strict` on all auth cookies |
+| **Mass Assignment** | Schema stripping | Zod strips unknown fields by default |
+| **Error Exposure** | Structured errors | `AppError` hierarchy, no stack traces in production |
+
+---
+
+## 🧪 Testing Strategy
+
+### Test Pyramid
+
+```mermaid
+graph TD
+    A[E2E Tests - Playwright] --> B[Integration Tests - Supertest]
+    B --> C[Unit Tests - Jest]
+    
+    style A fill:#e74c3c,color:#fff
+    style B fill:#f39c12,color:#fff
+    style C fill:#2ecc71,color:#fff
+```
+
+### Backend Tests (Jest)
+```bash
+cd backend && npm test
+```
+- **Coverage Threshold**: 90% (branches, functions, lines, statements)
+- **Test Suites**: `carbonCalculator`, `errorHandler`, `auth.middleware`, `validate.middleware`, `validators`, `constants`, `AppError`
+
+### Frontend Tests (React Testing Library)
+```bash
+cd frontend && npm test
+```
+- **Coverage Threshold**: 90%
+- **Test Suites**: `EmissionTrend`, `Sidebar`, `TopBar`
+
+### End-to-End Tests (Playwright)
+```bash
+cd frontend && npx playwright test
+```
+- **Browsers**: Chromium, Firefox, WebKit
+- **Test Suites**: Authentication flow, Dashboard navigation, Security headers
+
+### ML Service Tests (Pytest)
+```bash
+cd ml-service && pytest
+```
 
 ---
 
@@ -116,39 +253,48 @@ The backend exposes a fully documented OpenAPI specification.
 Once the backend is running, navigate to:
 **👉 http://localhost:5000/api-docs**
 
-Endpoints include:
-- `POST /api/v1/auth/register` (Registers a user, sets HTTPOnly cookies)
-- `POST /api/v1/auth/login` (Authenticates user, sets HTTPOnly cookies)
-- `GET /api/v1/entries` (Fetches carbon logs)
-- `POST /api/v1/entries` (Submits a new carbon log)
-- `GET /api/v1/ai/score` (Retrieves AI-calculated sustainability score)
+### API Endpoints Reference
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `POST` | `/api/v1/auth/register` | Register a new user account | ❌ |
+| `POST` | `/api/v1/auth/login` | Authenticate and receive tokens | ❌ |
+| `POST` | `/api/v1/auth/refresh` | Refresh access token | 🍪 |
+| `POST` | `/api/v1/auth/logout` | Invalidate session | ✅ |
+| `GET` | `/api/v1/auth/profile` | Get authenticated user profile | ✅ |
+| `GET` | `/api/v1/entries` | Get paginated carbon entries | ✅ |
+| `POST` | `/api/v1/entries` | Create a new carbon entry | ✅ |
+| `GET` | `/api/v1/entries/:id` | Get a specific entry | ✅ |
+| `PUT` | `/api/v1/entries/:id` | Update an entry | ✅ |
+| `DELETE` | `/api/v1/entries/:id` | Delete an entry | ✅ |
+| `GET` | `/api/v1/entries/summary` | Get emission summary & trends | ✅ |
+| `GET` | `/api/v1/goals` | Get all user goals | ✅ |
+| `POST` | `/api/v1/goals` | Create a new goal | ✅ |
+| `PUT` | `/api/v1/goals/:id` | Update a goal | ✅ |
+| `DELETE` | `/api/v1/goals/:id` | Delete a goal | ✅ |
+| `GET` | `/api/v1/ai/advice` | Get AI carbon advice | ✅ |
+| `GET` | `/api/v1/ai/habits` | Get AI habit analysis | ✅ |
+| `POST` | `/api/v1/ai/chat` | Chat with AI Eco Coach | ✅ |
+| `GET` | `/api/v1/ai/challenges` | Generate sustainability challenges | ✅ |
+| `GET` | `/api/v1/ai/score` | Get sustainability score | ✅ |
+| `GET` | `/api/v1/ai/predictions` | Get emission predictions | ✅ |
 
 ---
 
-## 🧪 Testing Instructions
+## ♿ Accessibility Compliance (WCAG 2.2 AA)
 
-The project features a comprehensive testing suite spanning all microservices.
-
-### Backend Tests (Jest + Supertest)
-```bash
-cd backend
-npm install
-npm run test
-```
-
-### Frontend Tests (Jest + React Testing Library)
-```bash
-cd frontend
-npm install
-npm run test
-```
-
-### ML Service Tests (Pytest)
-```bash
-cd ml-service
-pip install -r requirements-dev.txt
-pytest
-```
+| Requirement | Implementation |
+|-------------|----------------|
+| Semantic Landmarks | `<main>`, `<nav>`, `<aside>`, `<header>` with ARIA roles |
+| Active Navigation | `aria-current="page"` on active sidebar links |
+| Skip Navigation | `skip-to-content` bypass link for keyboard users |
+| Focus Management | Global `focus-visible` outline rings |
+| Motion Sensitivity | `@media (prefers-reduced-motion: reduce)` in CSS |
+| Form Labels | Explicit `<label>` elements with `htmlFor` |
+| Error Announcements | `role="alert"` on error messages |
+| Loading States | `role="status"` with `aria-live="polite"` |
+| Decorative Icons | `aria-hidden="true"` on all Lucide icons |
+| Color Contrast | Curated HSL palette meeting 4.5:1 contrast ratio |
 
 ---
 

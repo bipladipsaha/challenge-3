@@ -74,7 +74,7 @@ jobs:
         JWT_REFRESH_SECRET: test-refresh-secret-key-for-ci-minimum
 
     - name: Upload Coverage Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: backend-coverage
@@ -102,7 +102,7 @@ jobs:
       run: cd frontend && npm run test:ci
 
     - name: Upload Coverage Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: frontend-coverage
@@ -139,7 +139,7 @@ jobs:
         CI: true
 
     - name: Upload Playwright Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: playwright-report
